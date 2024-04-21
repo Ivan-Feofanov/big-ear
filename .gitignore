@@ -27,3 +27,4 @@ gen
 go.work
 
 config.toml
+dist/
