@@ -1,4 +1,4 @@
-package service
+package ethereum
 
 import (
 	"context"
@@ -9,36 +9,41 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Ivan-Feofanov/go-blockchain-listener/pkg/config"
-
-	protocol "github.com/Ivan-Feofanov/go-blockchain-listener/pkg/svc/.generated"
+	"github.com/Ivan-Feofanov/big-ear/pkg/config"
+	protocol "github.com/Ivan-Feofanov/big-ear/pkg/svc/protocol"
 
 	"braces.dev/errtrace"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-type EthClient struct {
-	cfg    *config.Config
-	URL    string
-	client *ethclient.Client
+type Client struct {
+	cfg      *config.Config
+	URL      string
+	client   EthClient
+	runLimit uint
 }
 
-func NewEthClient(cfg *config.Config) (*EthClient, error) {
+func GetClient(cfg *config.Config, client EthClient, dialURL string, runLimit uint) *Client {
+	return &Client{
+		cfg:      cfg,
+		URL:      dialURL,
+		client:   client,
+		runLimit: runLimit,
+	}
+}
+
+func New(cfg *config.Config) (*Client, error) {
 	client, err := ethclient.Dial(buildEthURL(cfg))
 	if err != nil {
 		return nil, errtrace.Wrap(err)
 	}
 
-	return &EthClient{
-		cfg:    cfg,
-		URL:    buildEthURL(cfg),
-		client: client,
-	}, nil
+	return GetClient(cfg, client, buildEthURL(cfg), 0), nil
 
 }
 
-func (e *EthClient) Pull(out protocol.AgentClient) error {
-	var requestID = 0
+func (e *Client) Pull(out protocol.AgentClient) error {
+	var requestID uint = 0
 	for {
 		requestID++
 
@@ -61,7 +66,7 @@ func (e *EthClient) Pull(out protocol.AgentClient) error {
 		}
 		resp, err := out.EvaluateBlock(context.Background(), &protocol.EvaluateBlockRequest{
 			Event:     &blockEvent,
-			RequestId: strconv.Itoa(requestID),
+			RequestId: strconv.Itoa(int(requestID)),
 			ShardId:   1,
 		})
 		if err != nil {
@@ -83,8 +88,14 @@ func (e *EthClient) Pull(out protocol.AgentClient) error {
 			log.Default().Println(resp.GetFindings())
 		}
 
+		if e.runLimit > 0 && requestID >= e.runLimit {
+			break
+		}
+
 		time.Sleep(5 * time.Second)
 	}
+
+	return nil
 }
 
 func buildEthURL(cfg *config.Config) string {

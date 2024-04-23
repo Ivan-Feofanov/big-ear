@@ -11,11 +11,9 @@ const (
 )
 
 type Config struct {
-	Verbosity       int    `default:"1" usage:"verbosity level" env:"VERBOSITY" toml:"verbosity" flag:"v"`
-	Environment     string `default:"dev" usage:"environment" env:"ENV"`
-	Network         string `default:"mainnet" env:"NETWORK"`
-	DRPCAPIKey      string `required:"true" env:"DRPC_API_KEY" toml:"drpc_api_key" flag:"drpc-api-key"`
-	ReceiverAddress string `default:"localhost:50051" env:"RECEIVER_ADDRESS"`
+	Verbosity       int    `default:"0" usage:"verbosity level"`
+	DRPCAPIKey      string `required:"true" env:"DRPC_API_KEY" toml:"drpc_api_key"`
+	ReceiverAddress string `default:"localhost:50051"`
 }
 
 func GetConfig() (*Config, error) {

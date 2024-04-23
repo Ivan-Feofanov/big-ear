@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Ivan-Feofanov/go-blockchain-listener/pkg/config"
-	service "github.com/Ivan-Feofanov/go-blockchain-listener/pkg/svc"
+	"github.com/Ivan-Feofanov/big-ear/pkg/config"
+	service "github.com/Ivan-Feofanov/big-ear/pkg/svc"
 )
 
 func main() {

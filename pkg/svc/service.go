@@ -1,9 +1,10 @@
 package service
 
 import (
-	"github.com/Ivan-Feofanov/go-blockchain-listener/pkg/config"
+	"github.com/Ivan-Feofanov/big-ear/pkg/config"
+	"github.com/Ivan-Feofanov/big-ear/pkg/svc/ethereum"
 
-	protocol "github.com/Ivan-Feofanov/go-blockchain-listener/pkg/svc/.generated"
+	protocol "github.com/Ivan-Feofanov/big-ear/pkg/svc/protocol"
 
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -16,12 +17,12 @@ type Puller interface {
 }
 
 type Service struct {
-	eth *EthClient
+	eth *ethereum.Client
 	out protocol.AgentClient
 }
 
 func NewService(cfg *config.Config) (*Service, error) {
-	eth, err := NewEthClient(cfg)
+	eth, err := ethereum.New(cfg)
 	if err != nil {
 		return nil, errtrace.Wrap(err)
 	}

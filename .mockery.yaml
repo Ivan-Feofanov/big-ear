@@ -1,0 +1,11 @@
+with-expecter: true
+dir: "{{.InterfaceDir}}/mocks"
+outpkg: "{{.PackageName}}mock"
+log-level: debug
+packages:
+  github.com/Ivan-Feofanov/big-ear/pkg/svc/ethereum:
+    interfaces:
+      EthClient:
+  github.com/Ivan-Feofanov/big-ear/pkg/svc/protocol:
+    interfaces:
+      AgentClient:
