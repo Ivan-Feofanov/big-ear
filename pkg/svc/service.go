@@ -29,7 +29,7 @@ func NewService(cfg *config.Config) (*Service, error) {
 		return nil, errtrace.Wrap(err)
 	}
 
-	eventStream, err := stream.NewStream(nc, "events")
+	eventStream, err := stream.NewStream(nc, cfg.StreamName)
 	if err != nil {
 		return nil, errtrace.Wrap(err)
 	}

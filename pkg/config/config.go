@@ -5,16 +5,12 @@ import (
 	"github.com/cristalhq/aconfig"
 )
 
-const (
-	VerbosityInfo  = 0
-	VerbosityDebug = 1
-)
-
 type Config struct {
-	Verbosity       int    `default:"0" usage:"verbosity level"`
-	DRPCAPIKey      string `required:"true" env:"DRPC_API_KEY" toml:"drpc_api_key"`
+	DRPCAPIKey      string `required:"true" env:"DRPC_API_KEY"`
 	ReceiverAddress string `default:"localhost:50051"`
 	NatsURL         string `default:"nats://localhost:4222"`
+	LastDataDir     string `default:"/tmp/"`
+	StreamName      string `required:"true" env:"STREAM_NAME"`
 }
 
 func GetConfig() (*Config, error) {

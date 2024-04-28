@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -37,7 +38,20 @@ func GetClient(cfg *config.Config, client EthClient, dialURL string, runLimit ui
 	}
 }
 
+func checkDataDir(dataDir string) error {
+	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			return errtrace.Wrap(err)
+		}
+	}
+	return nil
+}
+
 func New(cfg *config.Config) (*Client, error) {
+	if err := checkDataDir(cfg.LastDataDir); err != nil {
+		return nil, errtrace.Wrap(err)
+	}
+
 	client, err := ethclient.Dial(buildEthURL(cfg))
 	if err != nil {
 		return nil, errtrace.Wrap(err)
@@ -78,8 +92,8 @@ func (e *Client) PullBlock(blockNumber uint64, eventStream *stream.Stream) error
 	return nil
 }
 
-func readLastBlockNumber() (uint64, error) {
-	data, err := os.ReadFile(lastBlockFilename)
+func readLastBlockNumber(dataDir string) (uint64, error) {
+	data, err := os.ReadFile(path.Join(dataDir, lastBlockFilename))
 	if err != nil {
 		return 0, errtrace.Wrap(err)
 	}
@@ -90,8 +104,8 @@ func readLastBlockNumber() (uint64, error) {
 	return num, nil
 }
 
-func writeLastBlockNumber(num uint64) error {
-	return os.WriteFile(lastBlockFilename, []byte(strconv.FormatUint(num, 10)), 0644)
+func writeLastBlockNumber(dataDir string, num uint64) error {
+	return os.WriteFile(path.Join(dataDir, lastBlockFilename), []byte(strconv.FormatUint(num, 10)), 0644)
 }
 
 func (e *Client) Rewind(from, to uint64, eventStream *stream.Stream) error {
@@ -101,7 +115,7 @@ func (e *Client) Rewind(from, to uint64, eventStream *stream.Stream) error {
 			return errtrace.Wrap(err)
 		}
 	}
-	if err := writeLastBlockNumber(to); err != nil {
+	if err := writeLastBlockNumber(e.cfg.LastDataDir, to); err != nil {
 		log.Default().Printf("Failed to write last block number to file: %v", err)
 		return errtrace.Wrap(err)
 	}
@@ -114,7 +128,7 @@ func (e *Client) Pull(eventStream *stream.Stream) error {
 	if err != nil {
 		return errtrace.Wrap(err)
 	}
-	writtenLastBlockNumber, err := readLastBlockNumber()
+	writtenLastBlockNumber, err := readLastBlockNumber(e.cfg.LastDataDir)
 	if err != nil {
 		log.Default().Printf(
 			"Failed to read last block number from file: %v\nStaring from actual block number #%d", err, actualBlockNumber)
@@ -148,7 +162,7 @@ func (e *Client) Pull(eventStream *stream.Stream) error {
 			return errtrace.Wrap(err)
 		}
 
-		if err := writeLastBlockNumber(blockNumber); err != nil {
+		if err := writeLastBlockNumber(e.cfg.LastDataDir, blockNumber); err != nil {
 			log.Default().Printf("Failed to write last block number to file: %v", err)
 			return errtrace.Wrap(err)
 		}

@@ -28,5 +28,5 @@ go.work
 
 config.toml
 dist/
-
+.env
 last_block.txt
