@@ -1,8 +1,7 @@
 package main
 
 import (
-	"log/slog"
-	"os"
+	"log"
 
 	"github.com/Ivan-Feofanov/big-ear/pkg/config"
 	service "github.com/Ivan-Feofanov/big-ear/pkg/svc"
@@ -11,19 +10,16 @@ import (
 func main() {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	svc, err := service.NewService(cfg)
 	if err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if err := svc.Run(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 }

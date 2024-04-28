@@ -6,6 +6,7 @@ require (
 	braces.dev/errtrace v0.3.0
 	github.com/cristalhq/aconfig v0.18.5
 	github.com/ethereum/go-ethereum v1.13.15
+	github.com/nats-io/nats.go v1.34.1
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
@@ -26,8 +27,12 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.2.4 // indirect
+	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
+	github.com/nats-io/nkeys v0.4.7 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect

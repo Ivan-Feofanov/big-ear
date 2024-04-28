@@ -14,6 +14,7 @@ type Config struct {
 	Verbosity       int    `default:"0" usage:"verbosity level"`
 	DRPCAPIKey      string `required:"true" env:"DRPC_API_KEY" toml:"drpc_api_key"`
 	ReceiverAddress string `default:"localhost:50051"`
+	NatsURL         string `default:"nats://localhost:4222"`
 }
 
 func GetConfig() (*Config, error) {

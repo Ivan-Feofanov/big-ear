@@ -6,6 +6,7 @@ packages:
   github.com/Ivan-Feofanov/big-ear/pkg/svc/ethereum:
     interfaces:
       EthClient:
-  github.com/Ivan-Feofanov/big-ear/pkg/svc/protocol:
+  github.com/Ivan-Feofanov/big-ear/pkg/svc:
     interfaces:
-      AgentClient:
+      Puller:
+
