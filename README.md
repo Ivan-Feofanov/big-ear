@@ -8,3 +8,6 @@ When you're ready, start your application by running:
 `docker compose up --build`.
 
 NATS JetStream should be up and running on port 4222 (NATS address: `nats://localhost:4222`).
+
+### Scheme:
+![scheme.png](scheme.png)
