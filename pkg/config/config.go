@@ -6,11 +6,12 @@ import (
 )
 
 type Config struct {
-	DRPCAPIKey      string `required:"true" env:"DRPC_API_KEY"`
-	ReceiverAddress string `default:"localhost:50051"`
-	NatsURL         string `default:"nats://localhost:4222"`
-	LastDataDir     string `default:"/tmp/"`
-	StreamName      string `required:"true" env:"STREAM_NAME"`
+	DRPCAPIKey  string `required:"true" env:"DRPC_API_KEY"`
+	NatsURL     string `default:"nats://localhost:4222"`
+	LastDataDir string `default:"/tmp/"`
+	StreamName  string `required:"true" env:"STREAM_NAME"`
+	Block       uint64
+	Debug       bool
 }
 
 func GetConfig() (*Config, error) {

@@ -18,6 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Printf("Start stream with name: %s\n", cfg.StreamName)
 	if err := svc.Run(); err != nil {
 		log.Fatal(err)
 	}

@@ -8,11 +8,14 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Ivan-Feofanov/big-ear/pkg/config"
 	protocol "github.com/Ivan-Feofanov/big-ear/pkg/proto"
 	"github.com/Ivan-Feofanov/big-ear/pkg/stream"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"google.golang.org/protobuf/proto"
 
 	"braces.dev/errtrace"
@@ -61,11 +64,7 @@ func New(cfg *config.Config) (*Client, error) {
 
 }
 
-func (e *Client) PullBlock(blockNumber uint64, eventStream *stream.Stream) error {
-	block, err := e.client.BlockByNumber(context.Background(), big.NewInt(int64(blockNumber)))
-	if err != nil {
-		return errtrace.Wrap(err)
-	}
+func (e *Client) StreamBlock(block types.Block, eventStream *stream.Stream) error {
 	blockEvent := protocol.BlockEvent{
 		BlockNumber: block.Number().String(),
 		Block: &protocol.BlockEvent_EthBlock{
@@ -86,26 +85,64 @@ func (e *Client) PullBlock(blockNumber uint64, eventStream *stream.Stream) error
 	if err = eventStream.Publish(context.Background(), "block", payload); err != nil {
 		return errtrace.Wrap(err)
 	}
-
-	log.Default().Printf("Block #%d streamed", block.Number())
-
+	if e.cfg.Debug {
+		log.Default().Printf("Block #%d streamed", block.Number())
+	}
 	return nil
 }
 
-func readLastBlockNumber(dataDir string) (uint64, error) {
-	data, err := os.ReadFile(path.Join(dataDir, lastBlockFilename))
+func (e *Client) StreamTransaction(tx *types.Transaction, eventStream *stream.Stream) error {
+	receipt, err := e.client.TransactionReceipt(context.Background(), tx.Hash())
 	if err != nil {
-		return 0, errtrace.Wrap(err)
+		log.Fatal(err)
 	}
-	num, err := strconv.ParseUint(string(data), 10, 64)
+
+	from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
 	if err != nil {
-		return 0, errtrace.Wrap(err)
+		return errtrace.Wrap(err)
 	}
-	return num, nil
+
+	txEvent := protocol.TransactionEvent{
+		Block: &protocol.TransactionEvent_EthBlock{
+			BlockNumber: receipt.BlockNumber.String(),
+			BlockHash:   receipt.BlockHash.String(),
+		},
+		Addresses: map[string]bool{strings.ToLower(from.String()): true},
+		Logs:      convertLogs(receipt.Logs),
+	}
+	for _, record := range receipt.Logs {
+		txEvent.Addresses[strings.ToLower(record.Address.String())] = true
+	}
+
+	payload, err := proto.Marshal(&protocol.EvaluateTxRequest{
+		Event:   &txEvent,
+		ShardId: 1,
+	})
+	if err != nil {
+		return errtrace.Wrap(err)
+	}
+
+	if err = eventStream.Publish(context.Background(), "transaction", payload); err != nil {
+		return errtrace.Wrap(err)
+	}
+	if e.cfg.Debug {
+		log.Default().Printf("Tx #%s streamed", tx.Hash().String())
+	}
+	return nil
 }
 
-func writeLastBlockNumber(dataDir string, num uint64) error {
-	return os.WriteFile(path.Join(dataDir, lastBlockFilename), []byte(strconv.FormatUint(num, 10)), 0644)
+func (e *Client) PullBlock(blockNumber uint64, eventStream *stream.Stream) error {
+	block, err := e.client.BlockByNumber(context.Background(), big.NewInt(int64(blockNumber)))
+	if err != nil {
+		return errtrace.Wrap(err)
+	}
+	transactions := block.Transactions()
+	for _, tx := range transactions {
+		if err := e.StreamTransaction(tx, eventStream); err != nil {
+			return errtrace.Wrap(err)
+		}
+	}
+	return e.StreamBlock(*block, eventStream)
 }
 
 func (e *Client) Rewind(from, to uint64, eventStream *stream.Stream) error {
@@ -124,6 +161,10 @@ func (e *Client) Rewind(from, to uint64, eventStream *stream.Stream) error {
 }
 
 func (e *Client) Pull(eventStream *stream.Stream) error {
+	if e.cfg.Block != 0 {
+		return e.PullBlock(e.cfg.Block, eventStream)
+	}
+
 	actualBlockNumber, err := e.client.BlockNumber(context.Background())
 	if err != nil {
 		return errtrace.Wrap(err)
@@ -177,4 +218,36 @@ func (e *Client) Pull(eventStream *stream.Stream) error {
 
 func buildEthURL(cfg *config.Config) string {
 	return fmt.Sprintf("https://lb.drpc.org/ogrpc?network=ethereum&dkey=%s", cfg.DRPCAPIKey)
+}
+
+func convertLogs(logs []*types.Log) []*protocol.TransactionEvent_Log {
+	protoLogs := make([]*protocol.TransactionEvent_Log, 0, len(logs))
+	for _, l := range logs {
+		var topics []string
+		for _, t := range l.Topics {
+			topics = append(topics, t.String())
+		}
+		protoLogs = append(protoLogs, &protocol.TransactionEvent_Log{
+			Address: l.Address.String(),
+			Topics:  topics,
+			Data:    hexutil.Encode(l.Data),
+		})
+	}
+	return protoLogs
+}
+
+func readLastBlockNumber(dataDir string) (uint64, error) {
+	data, err := os.ReadFile(path.Join(dataDir, lastBlockFilename))
+	if err != nil {
+		return 0, errtrace.Wrap(err)
+	}
+	num, err := strconv.ParseUint(string(data), 10, 64)
+	if err != nil {
+		return 0, errtrace.Wrap(err)
+	}
+	return num, nil
+}
+
+func writeLastBlockNumber(dataDir string, num uint64) error {
+	return os.WriteFile(path.Join(dataDir, lastBlockFilename), []byte(strconv.FormatUint(num, 10)), 0644)
 }
