@@ -2,7 +2,6 @@ package ethereum
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/big"
 	"os"
@@ -26,18 +25,14 @@ const lastBlockFilename = "last_block.txt"
 
 type Client struct {
 	cfg             *config.Config
-	URL             string
 	client          EthClient
 	lastBlockNumber uint64
-	runLimit        uint
 }
 
-func GetClient(cfg *config.Config, client EthClient, dialURL string, runLimit uint) *Client {
+func GetClient(cfg *config.Config, client EthClient) *Client {
 	return &Client{
-		cfg:      cfg,
-		URL:      dialURL,
-		client:   client,
-		runLimit: runLimit,
+		cfg:    cfg,
+		client: client,
 	}
 }
 
@@ -55,12 +50,12 @@ func New(cfg *config.Config) (*Client, error) {
 		return nil, errtrace.Wrap(err)
 	}
 
-	client, err := ethclient.Dial(buildEthURL(cfg))
+	client, err := ethclient.Dial(cfg.JsonRpcURL)
 	if err != nil {
 		return nil, errtrace.Wrap(err)
 	}
 
-	return GetClient(cfg, client, buildEthURL(cfg), 0), nil
+	return GetClient(cfg, client), nil
 
 }
 
@@ -207,17 +202,7 @@ func (e *Client) Pull(eventStream *stream.Stream) error {
 			log.Default().Printf("Failed to write last block number to file: %v", err)
 			return errtrace.Wrap(err)
 		}
-
-		if e.runLimit > 0 && requestID >= e.runLimit {
-			break
-		}
 	}
-
-	return nil
-}
-
-func buildEthURL(cfg *config.Config) string {
-	return fmt.Sprintf("https://lb.drpc.org/ogrpc?network=ethereum&dkey=%s", cfg.DRPCAPIKey)
 }
 
 func convertLogs(logs []*types.Log) []*protocol.TransactionEvent_Log {

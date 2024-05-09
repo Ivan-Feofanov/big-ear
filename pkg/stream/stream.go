@@ -2,10 +2,10 @@ package stream
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"braces.dev/errtrace"
+	"github.com/Ivan-Feofanov/big-ear/pkg/config"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -15,20 +15,19 @@ type Stream struct {
 	name string
 }
 
-func NewStream(nc *nats.Conn, name string) (*Stream, error) {
+func NewStream(nc *nats.Conn, natsConfig config.NatsConfig) (*Stream, error) {
 	js, _ := jetstream.New(nc)
 	stream := &Stream{
 		js:   js,
-		name: name,
+		name: natsConfig.StreamName,
 	}
 
-	if _, err := js.CreateStream(context.Background(), jetstream.StreamConfig{
-		Name:     name,
-		Subjects: []string{fmt.Sprintf("%s.>", name)},
+	if _, err := js.CreateOrUpdateStream(context.Background(), jetstream.StreamConfig{
+		Name:              natsConfig.StreamName,
+		Subjects:          []string{fmt.Sprintf("%s.>", natsConfig.StreamName)},
+		MaxMsgsPerSubject: natsConfig.MaxMsgs,
+		MaxBytes:          natsConfig.MaxBytes,
 	}); err != nil {
-		if errors.Is(err, jetstream.ErrStreamNameAlreadyInUse) {
-			return stream, nil
-		}
 		return nil, errtrace.Wrap(err)
 	}
 

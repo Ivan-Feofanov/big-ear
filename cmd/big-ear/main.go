@@ -18,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Start stream with name: %s\n", cfg.StreamName)
+	log.Printf("Starting stream with name: %s...\n", cfg.Nats.StreamName)
 	if err := svc.Run(); err != nil {
 		log.Fatal(err)
 	}

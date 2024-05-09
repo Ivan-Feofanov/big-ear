@@ -5,11 +5,17 @@ import (
 	"github.com/cristalhq/aconfig"
 )
 
+type NatsConfig struct {
+	URL        string `default:"nats://localhost:4222"`
+	MaxMsgs    int64  `default:"-1"`
+	MaxBytes   int64  `default:"-1"`
+	StreamName string `required:"true"`
+}
+
 type Config struct {
-	DRPCAPIKey  string `required:"true" env:"DRPC_API_KEY"`
-	NatsURL     string `default:"nats://localhost:4222"`
+	JsonRpcURL  string `required:"true" env:"JSON_RPC_URL"`
+	Nats        NatsConfig
 	LastDataDir string `default:"/tmp/"`
-	StreamName  string `required:"true" env:"STREAM_NAME"`
 	Block       uint64
 	Debug       bool
 }

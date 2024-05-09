@@ -6,8 +6,8 @@ require (
 	braces.dev/errtrace v0.3.0
 	github.com/cristalhq/aconfig v0.18.5
 	github.com/ethereum/go-ethereum v1.13.15
-	github.com/mitchellh/mapstructure v1.4.1
 	github.com/nats-io/nats.go v1.34.1
+	github.com/sourcegraph/conc v0.3.0
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
