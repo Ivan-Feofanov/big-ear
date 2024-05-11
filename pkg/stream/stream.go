@@ -15,7 +15,11 @@ type Stream struct {
 	name string
 }
 
-func NewStream(nc *nats.Conn, natsConfig config.NatsConfig) (*Stream, error) {
+func (s *Stream) Name() string {
+	return s.name
+}
+
+func NewStream(nc *nats.Conn, natsConfig config.StreamConfig) (*Stream, error) {
 	js, _ := jetstream.New(nc)
 	stream := &Stream{
 		js:   js,

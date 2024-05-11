@@ -1,9 +1,12 @@
 package service
 
 import (
+	"log"
+
 	"braces.dev/errtrace"
 	"github.com/Ivan-Feofanov/big-ear/pkg/config"
 	"github.com/Ivan-Feofanov/big-ear/pkg/ethereum"
+	"github.com/Ivan-Feofanov/big-ear/pkg/polygon"
 	"github.com/Ivan-Feofanov/big-ear/pkg/stream"
 	"github.com/nats-io/nats.go"
 	"github.com/sourcegraph/conc/pool"
@@ -14,8 +17,9 @@ type Puller interface {
 }
 
 type Service struct {
-	eth    *ethereum.Client
-	stream *stream.Stream
+	eth     *ethereum.Client
+	polygon *polygon.Client
+	stream  *stream.Stream
 }
 
 func NewService(cfg *config.Config) (*Service, error) {
@@ -24,28 +28,35 @@ func NewService(cfg *config.Config) (*Service, error) {
 		return nil, errtrace.Wrap(err)
 	}
 
-	nc, err := nats.Connect(cfg.Nats.URL)
+	poly, err := polygon.New(cfg)
 	if err != nil {
 		return nil, errtrace.Wrap(err)
 	}
 
-	eventStream, err := stream.NewStream(nc, cfg.Nats)
+	nc, err := nats.Connect(cfg.NatsURL)
+	if err != nil {
+		return nil, errtrace.Wrap(err)
+	}
+
+	eventStream, err := stream.NewStream(nc, cfg.Streams.Polygon)
 	if err != nil {
 		return nil, errtrace.Wrap(err)
 	}
 
 	return &Service{
-		eth:    eth,
-		stream: eventStream,
+		eth:     eth,
+		polygon: poly,
+		stream:  eventStream,
 	}, nil
 }
 
 func (s *Service) Run() error {
-	pullers := []Puller{s.eth}
+	pullers := []Puller{s.polygon}
 
 	p := pool.New().WithErrors()
 	for _, puller := range pullers {
 		p.Go(func() error {
+			log.Printf("Starting stream with name: %s...\n", s.stream.Name())
 			return puller.Pull(s.stream)
 		})
 	}
